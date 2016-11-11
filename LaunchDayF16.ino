@@ -5,38 +5,34 @@
  * This file contains the code for collecting data from:
  * 
  * +(IMU) - Adafruit 10-DOF IMU Breakout
- * 
- * +(Barometer) - SparkFun Barometric Pressure Sensor Breakout - BMP180
  * +(GPS) - Adafruit Ultimate GPS Breakout - 66 channel w/10 Hz updates - Version 3
  * 
  * Authors: Phoenix College Acsend Team 2015 - 2016
+ * Modders: Jake Denison and Ainsley Chapman
  * 
- * Version 1.2.4
+ * Version 1.3.6
  * 
  * TODO's: 
- *    IMU - Acceleration scale, if we can.
- *    Barometer - Altitude constant
- *  LED outputs.
- *    Sensor errors. - lum, baro, GPS
- *  Finish header comments.
- *    explain output file.
- *  Wiring Guide.
- *  
- *      Move the New line character outside of the GPS 
+ * IMU - Acceleration scale, if we can.
+ * 
+ * LED outputs.
+ *   Sensor errors. - lum, baro, GPS
+ * Finish header comments.
+ *   explain output file.
+ * Wiring Guide.
+ * Move the New line character outside of the GPS 
  *    (If needed) Add a second serial output line per loop iteration.
- *  Real-time status transmissions (Live Reporting):
- *    GPS
- *  Post Processing
- *    Include time stamp in GPS
+ * Real-time status transmissions (Live Reporting):
+ *   GPS
+ * Post Processing
+ *   Include time stamp in GPS
  *   
  ***************************************************/
 
 /////////////////////////////////////////////////////////
 //Includes, (Up to date libraries folder can be downloaded at: https://github.com/PC-Ascend-Team/libraries)
-#include <Wire.h>                //IMU, Borometer, GPS
-
+#include <Wire.h>              //IMU, Borometer, GPS
 #include <Adafruit_Sensor.h>   //General Adafruit Sensor Library
-
 #include <Adafruit_10DOF.h>    //IMU
 #include <Adafruit_LSM303_U.h> //IMU
 #include <Adafruit_L3GD20_U.h> //IMU
@@ -80,73 +76,73 @@ int t = 0;  //time keeper (seconds)
 int LD0 = 13; // D13, sysLED
 
 //Funcions Prototypes
- /////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
 
- // int averageAnalogRead(int pinToRead) - Takes an average of readings on a given pin. Returns the average
- int averageAnalogRead(int pinToRead);
+//int averageAnalogRead(int pinToRead) - Takes an average of readings on a given pin. Returns the average
+int averageAnalogRead(int pinToRead);
 
- // void printError(byte error) - Used by the Luminosity sensor to display errors
- void printError(byte error);
+//void printError(byte error) - Used by the Luminosity sensor to display errors
+void printError(byte error);
 
- // void useInterrupt(boolean v) - Used by the GPS
- void useInterrupt(boolean);
+//void useInterrupt(boolean v) - Used by the GPS
+void useInterrupt(boolean);
 
- // SIGNAL(TIMER0_COMPA_vect) - Used by the GPS
- SIGNAL(TIMER0_COMPA_vect);
+//SIGNAL(TIMER0_COMPA_vect) - Used by the GPS
+SIGNAL(TIMER0_COMPA_vect);
 
- //SETUP
- /////////////////////////////////////////////////////////
- void setup(void){
-  Serial.begin(115200); // begin serial conncetion, determined by recomended baud rate for GPS
+//SETUP
+/////////////////////////////////////////////////////////
+void setup(void){
+Serial.begin(115200); // begin serial conncetion, determined by recomended baud rate for GPS
 
- //IMU SETUP
- //////////////////////////////////////////////////////
- //Initialise the sensors & check connections
- if(!A.begin()){
-   Serial.println(F("No LSM303 detected."));
-    // light LED code
- }
- if(!M.begin()){
-   Serial.println(F("No LSM303 detected."));
-    // light LED code
- }
- if(!B.begin()){
-   Serial.print(F("No BMP085 detected."));
-    // light LED code
- }
- if(!G.begin()){
-   Serial.print(F("No L3GD20 detected."));
-    // light LED code
- }
+//IMU SETUP
+//////////////////////////////////////////////////////
+//Initialise the sensors & check connections
+if(!A.begin()){
+  Serial.println(F("No LSM303 detected."));
+   // light LED code
+}
+if(!M.begin()){
+  Serial.println(F("No LSM303 detected."));
+   // light LED code
+}
+if(!B.begin()){
+  Serial.print(F("No BMP085 detected."));
+   // light LED code
+}
+if(!G.begin()){
+  Serial.print(F("No L3GD20 detected."));
+   // light LED code
+}
  
- sensor_t sensor;
- // Define sensors
- A.getSensor(&sensor);
- G.getSensor(&sensor);
- M.getSensor(&sensor);
- B.getSensor(&sensor);
+sensor_t sensor;
+// Define sensors
+A.getSensor(&sensor);
+G.getSensor(&sensor);
+M.getSensor(&sensor);
+B.getSensor(&sensor);
 
- M.enableAutoRange(true); // have mag use auto range
+M.enableAutoRange(true); // have mag use auto range
 
  
- //GPS SETUP
- //////////////////////////////////////////////////////
- GPS.begin(9600);
- GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
- GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
- GPS.sendCommand(PGCMD_ANTENNA);
- useInterrupt(true);
+//GPS SETUP
+//////////////////////////////////////////////////////
+GPS.begin(9600);
+GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
+GPS.sendCommand(PGCMD_ANTENNA);
+useInterrupt(true);
 
- //Phoenix College Acsend Team SETUP
- //////////////////////////////////////////////////////
- //pinModes
- pinMode(LD0, OUTPUT);
+//Phoenix College Acsend Team SETUP
+//////////////////////////////////////////////////////
+//pinModes
+pinMode(LD0, OUTPUT);
      
- //Output Header
- //////////////////////////////////////////////////////
- //Serial.println(F("Ax,Ay,Az,Mx,My,Mz,Gx,Gy,Gz,Bp,Bt,UVl,UVi,R,G,B,Vl,Il,LUX,T,P,BAlt,H:M:S.ms,DD/MM/20YY,Fix,FixQ,Lat,Long,LatD,LongD,Speed,Angle,GAlt,Sats"));
- Serial.println(F("roll,pitch,yaw,IMUP,IMUT,IMUA,H:M:S.ms,DD/MM/20YY,Fix,FixQ,Lat,Long,LatD,LongD,Speed,Angle,GAlt,Sats"));
- delay(1000);
+//Output Header
+//////////////////////////////////////////////////////
+//Serial.println(F("Ax,Ay,Az,Mx,My,Mz,Gx,Gy,Gz,Bp,Bt,UVl,UVi,R,G,B,Vl,Il,LUX,T,P,BAlt,H:M:S.ms,DD/MM/20YY,Fix,FixQ,Lat,Long,LatD,LongD,Speed,Angle,GAlt,Sats"));
+Serial.println(F("roll,pitch,yaw,IMUP,IMUT,IMUA,H:M:S.ms,DD/MM/20YY,Fix,FixQ,Lat,Long,LatD,LongD,Speed,Angle,GAlt,Sats"));
+delay(1000);
  
 }
 /////////////////////////////////////////////////////////
@@ -161,105 +157,105 @@ SIGNAL(TIMER0_COMPA_vect) {
   char c = GPS.read();
 }
 
- /////////////////////////////////////////////////////////
- // END GPS STUFF 
+/////////////////////////////////////////////////////////
+// END GPS STUFF 
 
 
 //LOOP
 /////////////////////////////////////////////////////////
- void loop() {
+void loop() {
 
-  //Launch Day State Machine
-  switch(state) {
-    case 0:   //State 00, Waiting State
+//Launch Day State Machine
+switch(state) {
+  case 0:   //State 00, Waiting State
 
-      state++;
-      break;
+    state++;
+    break;
   
-    case 1:   //State 01, Data Collection State
+   case 1:   //State 01, Data Collection State
 
-      //digitalWrite(LD0, HIGH); //Light LD0 to indicate start data loging
+//digitalWrite(LD0, HIGH); //Light LD0 to indicate start data loging
    
- //IMU OPERATIONS
- //////////////////////////////////////////////////////
- //Get a new sensor event
- //IMU Raw data
- //
- //Raw sensor event data - raw IMU data
- sensors_event_t A_event;
- sensors_event_t M_event;
- sensors_event_t G_event;
- sensors_event_t B_event;
+//IMU OPERATIONS
+//////////////////////////////////////////////////////
+//Get a new sensor event
+//IMU Raw data
+//
+//Raw sensor event data - raw IMU data
+sensors_event_t A_event;
+sensors_event_t M_event;
+sensors_event_t G_event;
+sensors_event_t B_event;
      
- float temperature; //Ambient temperature
+float temperature; //Ambient temperature
    
- //Retrieve sensor data
- A.getEvent(&A_event);
- M.getEvent(&M_event);
- G.getEvent(&G_event);
+//Retrieve sensor data
+A.getEvent(&A_event);
+M.getEvent(&M_event);
+G.getEvent(&G_event);
 
- //Display Raw Sensor Information: Accel, Mag, Gyro
- Serial.print(A_event.acceleration.x); Serial.print(F(","));
- Serial.print(A_event.acceleration.y); Serial.print(F(","));
- Serial.print(A_event.acceleration.z); Serial.print(F(","));
- Serial.print(M_event.magnetic.x);     Serial.print(F(","));
- Serial.print(M_event.magnetic.y);     Serial.print(F(","));
- Serial.print(M_event.magnetic.z);     Serial.print(F(","));
- Serial.print(G_event.gyro.x);         Serial.print(F(","));
- Serial.print(G_event.gyro.y);         Serial.print(F(","));
- Serial.print(G_event.gyro.z);         Serial.print(F(","));
+//Display Raw Sensor Information: Accel, Mag, Gyro
+Serial.print(A_event.acceleration.x); Serial.print(F(","));
+Serial.print(A_event.acceleration.y); Serial.print(F(","));
+Serial.print(A_event.acceleration.z); Serial.print(F(","));
+Serial.print(M_event.magnetic.x);     Serial.print(F(","));
+Serial.print(M_event.magnetic.y);     Serial.print(F(","));
+Serial.print(M_event.magnetic.z);     Serial.print(F(","));
+Serial.print(G_event.gyro.x);         Serial.print(F(","));
+Serial.print(G_event.gyro.y);         Serial.print(F(","));
+Serial.print(G_event.gyro.z);         Serial.print(F(","));
 
-      //IMU - AHRS Orientation data 
-      sensors_vec_t   orientation;   //sensor vector data - calculated IMU-AHRS orientation
+//IMU - AHRS Orientation data 
+sensors_vec_t   orientation;   //sensor vector data - calculated IMU-AHRS orientation
       
-      //Retrieve IMU sensors orientation data
-      if (ahrs.getOrientation(&orientation))
+//Retrieve IMU sensors orientation data
+if (ahrs.getOrientation(&orientation))
 
-      //Display Sensor Information: Orientation (Roll, Pitch, Heading)
-      /* 'orientation' should have valid .roll and .pitch fields */
-      Serial.print(orientation.roll);     Serial.print(F(","));
-      Serial.print(orientation.pitch);    Serial.print(F(","));
-      Serial.print(orientation.heading);  Serial.print(F(","));
+   //Display Sensor Information: Orientation (Roll, Pitch, Heading)
+   /* 'orientation' should have valid .roll and .pitch fields */
+   Serial.print(orientation.roll);     Serial.print(F(","));
+   Serial.print(orientation.pitch);    Serial.print(F(","));
+   Serial.print(orientation.heading);  Serial.print(F(","));
        
-      //Display Sensor Information: Pressure, Temp, Alt
-      B.getEvent(&B_event);
-      if (B_event.pressure){
-        Serial.print(B_event.pressure);     Serial.print(F(","));
-        B.getTemperature(&temperature);
-        Serial.print(temperature);          Serial.print(F(","));
-      }      
+   //Display Sensor Information: Pressure, Temp, Alt
+   B.getEvent(&B_event);
+   if (B_event.pressure){
+       Serial.print(B_event.pressure);     Serial.print(F(","));
+       B.getTemperature(&temperature);
+       Serial.print(temperature);          Serial.print(F(","));
+   }      
       
   
-      //GPS OPERATIONS
-      //////////////////////////////////////////////////////
-      if (! usingInterrupt) {
-        char c = GPS.read();
-      }
+//GPS OPERATIONS
+//////////////////////////////////////////////////////
+if (! usingInterrupt) {
+   char c = GPS.read();
+ }
       
-      if (GPS.newNMEAreceived()) {
-        if (!GPS.parse(GPS.lastNMEA()))
-          return;
-      }
+if (GPS.newNMEAreceived()) {
+    if (!GPS.parse(GPS.lastNMEA()))
+        return;
+ }
        
-      Serial.print(GPS.hour, DEC);       Serial.print(F(":")); 
-      Serial.print(GPS.minute, DEC);     Serial.print(F(":"));
-      Serial.print(GPS.seconds, DEC);    Serial.print(F("."));
-      Serial.print(GPS.milliseconds);    Serial.print(F(","));
-      Serial.print(GPS.day, DEC);        Serial.print(F("/"));
-      Serial.print(GPS.month, DEC);      Serial.print(F("/20"));
-      Serial.print(GPS.year, DEC);       Serial.print(F(","));
-      Serial.print((int)GPS.fix);        Serial.print(F(","));
-      Serial.print((int)GPS.fixquality); Serial.print(F(","));
-      //if no GPS fix print commas
-      if(!GPS.fix) {
-                                         Serial.print(F(","));
-                                         Serial.print(F(","));
-                                         Serial.print(F(","));
-                                         Serial.print(F(","));
-                                         Serial.print(F(","));
-                                         Serial.print(F(","));
-                                         Serial.print(F(","));
-                                         Serial.print(F(","));
+Serial.print(GPS.hour, DEC);       Serial.print(F(":")); 
+Serial.print(GPS.minute, DEC);     Serial.print(F(":"));
+Serial.print(GPS.seconds, DEC);    Serial.print(F("."));
+Serial.print(GPS.milliseconds);    Serial.print(F(","));
+Serial.print(GPS.day, DEC);        Serial.print(F("/"));
+Serial.print(GPS.month, DEC);      Serial.print(F("/20"));
+Serial.print(GPS.year, DEC);       Serial.print(F(","));
+Serial.print((int)GPS.fix);        Serial.print(F(","));
+Serial.print((int)GPS.fixquality); Serial.print(F(","));
+  //if no GPS fix print commas
+  if(!GPS.fix) {
+                                    Serial.print(F(","));
+                                    Serial.print(F(","));
+                                    Serial.print(F(","));
+                                    Serial.print(F(","));
+                                    Serial.print(F(","));
+                                    Serial.print(F(","));
+                                    Serial.print(F(","));
+                                    Serial.print(F(","));
       }
       if (GPS.fix) {
         Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);    Serial.print(F(",")); 
