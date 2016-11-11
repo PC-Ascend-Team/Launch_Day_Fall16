@@ -43,9 +43,6 @@
 #include <Adafruit_BMP085_U.h> //IMU
 #include <Adafruit_Simple_AHRS.h> //IMU - AHRS conversions
 
-//#include <SFE_BMP180.h>        //Barometer
-
-
 #include <Adafruit_GPS.h>      //GPS
 #include <SoftwareSerial.h>    //GPS
 
@@ -64,24 +61,7 @@ Adafruit_Simple_AHRS          ahrs(&A, &M);
 // Update this with the correct SLP for accurate altitude measurements
 float seaLevelPressure = SENSORS_PRESSURE_SEALEVELHPA;
 
-/* // GAS Definitions
-/////////////////////////////////////////////////////////
-//Hardware pin definitions (Analog input)
-int mq4 = A1,
-    mq6 = A2,
-    mq7 = A3;     //Initialize the Gas Sensor variables
- 
-int mq4_ppm,
-    mq6_ppm,
-    mq7_ppm;      //Initialize the Gas Sensor ppm values
-*/
 
-/*
-//Barometer Definitions
-/////////////////////////////////////////////////////////
-SFE_BMP180 pressure;
-#define ALTITUDE 337.1088 // Altitude of Phoenix in meters
-*/
 
 //GPS Definitions
 ////////////////////////////////////////////////////////
@@ -147,21 +127,7 @@ int LD0 = 13; // D13, sysLED
  B.getSensor(&sensor);
 
  M.enableAutoRange(true); // have mag use auto range
-/*
- //BAROMETER SETUP
- /////////////////////////////////////////////////////////
- pressure.begin();
-   
- // For error checks
- // Initialize the sensor (it is important to get calibration values stored on the device).
- if (pressure.begin()) {
-   // Print nothing upon success
- }
- else
- {
-   // light LED code
- }
- */
+
  
  //GPS SETUP
  //////////////////////////////////////////////////////
@@ -179,7 +145,7 @@ int LD0 = 13; // D13, sysLED
  //Output Header
  //////////////////////////////////////////////////////
  //Serial.println(F("Ax,Ay,Az,Mx,My,Mz,Gx,Gy,Gz,Bp,Bt,UVl,UVi,R,G,B,Vl,Il,LUX,T,P,BAlt,H:M:S.ms,DD/MM/20YY,Fix,FixQ,Lat,Long,LatD,LongD,Speed,Angle,GAlt,Sats"));
- Serial.println(F("roll,pitch,yaw,IMUP,IMUT,IMUA,BMP,BMPT,BMPA,LPG,CH4,CO,H:M:S.ms,DD/MM/20YY,Fix,FixQ,Lat,Long,LatD,LongD,Speed,Angle,GAlt,Sats"));
+ Serial.println(F("roll,pitch,yaw,IMUP,IMUT,IMUA,H:M:S.ms,DD/MM/20YY,Fix,FixQ,Lat,Long,LatD,LongD,Speed,Angle,GAlt,Sats"));
  delay(1000);
  
 }
@@ -191,9 +157,9 @@ int LD0 = 13; // D13, sysLED
 /////////////////////////////////////////////////////////
 // Adafruit put this code here in their GPS parsing example. Im not going to argue with them. ;)
 // Interrupt is called once a millisecond, looks for any new GPS data, and stores it
-//SIGNAL(TIMER0_COMPA_vect) {
-  //char c = GPS.read();
-//}
+SIGNAL(TIMER0_COMPA_vect) {
+  char c = GPS.read();
+}
 
  /////////////////////////////////////////////////////////
  // END GPS STUFF 
@@ -231,8 +197,7 @@ int LD0 = 13; // D13, sysLED
  A.getEvent(&A_event);
  M.getEvent(&M_event);
  G.getEvent(&G_event);
-   
- /*
+
  //Display Raw Sensor Information: Accel, Mag, Gyro
  Serial.print(A_event.acceleration.x); Serial.print(F(","));
  Serial.print(A_event.acceleration.y); Serial.print(F(","));
@@ -243,7 +208,6 @@ int LD0 = 13; // D13, sysLED
  Serial.print(G_event.gyro.x);         Serial.print(F(","));
  Serial.print(G_event.gyro.y);         Serial.print(F(","));
  Serial.print(G_event.gyro.z);         Serial.print(F(","));
-*/  
 
       //IMU - AHRS Orientation data 
       sensors_vec_t   orientation;   //sensor vector data - calculated IMU-AHRS orientation
@@ -264,96 +228,7 @@ int LD0 = 13; // D13, sysLED
         B.getTemperature(&temperature);
         Serial.print(temperature);          Serial.print(F(","));
       }      
-/*
-      //BAROMETER OPERATIONS
-       /////////////////////////////////////////////////////////
-       char status;
-       double T,P,p0,a;
       
-       status = pressure.startTemperature();
-       if (status != 0)
-       {
-         // Wait for the measurement to complete:
-         delay(status);
-    
-         // Retrieve the completed temperature measurement:
-         // Note that the measurement is stored in the variable T.
-         // Function returns 1 if successful, 0 if failure.
-    
-         status = pressure.getTemperature(T);
-         if (status != 0)
-         {
-          
-           // Start a pressure measurement:
-           // The parameter is the oversampling setting, from 0 to 3 (highest res, longest wait).
-           // If request is successful, the number of ms to wait is returned.
-           // If request is unsuccessful, 0 is returned.
-    
-           status = pressure.startPressure(3);
-           if (status != 0)
-           {
-             // Wait for the measurement to complete:
-             delay(status);
-    
-             // Retrieve the completed pressure measurement:
-             // Note that the measurement is stored in the variable P.
-             // Note also that the function requires the previous temperature measurement (T).
-             // (If temperature is stable, you can do one temperature measurement for a number of pressure measurements.)
-             // Function returns 1 if successful, 0 if failure.
-    
-             status = pressure.getPressure(P,T);
-             if (status != 0)
-             {
-    
-               // The pressure sensor returns abolute pressure, which varies with altitude.
-               // To remove the effects of altitude, use the sealevel function and your current altitude.
-               // This number is commonly used in weather reports.
-               // Parameters: P = absolute pressure in mb, ALTITUDE = current altitude in m.
-               // Result: p0 = sea-level compensated pressure in mb
-    
-               p0 = pressure.sealevel(P,ALTITUDE); // we're at 1655 meters (Boulder, CO)
-            
-               // On the other hand, if you want to determine your altitude from the pressure reading,
-               // use the altitude function along with a baseline pressure (sea-level or other).
-               // Parameters: P = absolute pressure in mb, p0 = baseline pressure in mb.
-               // Result: a = altitude in m.
-    
-               a = pressure.altitude(P,p0);
-             }
-             else Serial.println("error retrieving pressure measurement\n");
-           }
-           else Serial.println("error starting pressure measurement\n");
-         }
-         else Serial.println("error with baro");
-       }
-       else Serial.println("error with baro\n");
-       // Check the Temp, if it's >= 0 indicate and turn on the heater
-       if(T <= 0)
-       {
-         digitalWrite(heater, HIGH); // turn on the heat
-       }
-       if(T > 0)
-       {
-         digitalWrite(heater, LOW); // turn off the heat
-       }
-       
-       Serial.print(T,2);                    Serial.print(F(","));
-       Serial.print(P,2);                    Serial.print(F(","));
-       Serial.print(p0,2);                   Serial.print(F(","));       
-*/
-/*
-       //GAS SENSOR OPERATIONS
-       //////////////////////////////////////////////////////
-       mq4 = averageAnalogRead(1);        // read LPG analog input pin 1
-       mq6 = averageAnalogRead(2);        // read CH4 analog input pin 2
-       mq7 = averageAnalogRead(3);        // read CO analog input pin 3
-       float mq4_ppm = mapfloat(mq4,0,1023,300,10000);    //Convert the voltage to PPM
-       float mq6_ppm = mapfloat(mq6,0,1023,300,10000);    //Convert the voltage to PPM
-       float mq7_ppm = mapfloat(mq7,0,1023,10,1000);      //Convert the voltage to PPM
-       Serial.print(mq4_ppm, DEC);           Serial.print(F(","));
-       Serial.print(mq6_ppm, DEC);           Serial.print(F(","));
-       Serial.print(mq7_ppm, DEC);           Serial.print(F(","));
-*/
   
       //GPS OPERATIONS
       //////////////////////////////////////////////////////
